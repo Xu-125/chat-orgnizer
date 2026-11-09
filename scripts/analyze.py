@@ -13,21 +13,24 @@
 
 import argparse
 import json
-import subprocess
 import sys
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
 
+import adapters.lark      # noqa: F401  导入即注册
+import adapters.wecom     # noqa: F401
+from adapters.base import get_adapter
+
 # ---------------------------------------------------------------- 判定阈值
 # 想改口径就改这里，别去动下面的逻辑。
 CONFIG = {
     "window_days": 30,          # 统计消息的时间窗口（天）
-    "page_size": 50,            # 每次拉消息条数，CLI 上限 50
+    "page_size": 50,            # 每次拉消息条数，飞书上限 50
     "fetch_pages": 2,           # 每群最多翻几页（2 页 = 约 100 条消息）
     "active_min_msgs": 3,       # 「我在推进」要求的最少发言条数
     "active_within_days": 14,   # 「我在推进」要求最近一次发言在这之内
-    "respond_at_within_days": 7,   # 「需我响应」要求最近被 @ 在这之内
+    "respond_at_within_days": 7,      # 「需我响应」要求最近被 @ 在这之内
     "respond_group_active_days": 14,  # 且群本身在这之内还活跃
     "watching_group_active_days": 30, # 群还活着就至少算「我在关注」
     "watching_my_within_days": 60,    # 群冷但你 60 天内发过言，也算关注
@@ -42,25 +45,6 @@ TIER_LABEL = {
     "idle": "无需处理",
     "quit": "可退出",
 }
-
-
-def run_cli(args, retries=1):
-    """调用 lark-cli 并解析 JSON。消息接口偶发返回非 JSON，重试一次。"""
-    last_err = None
-    for _ in range(retries + 1):
-        try:
-            proc = subprocess.run(
-                ["lark-cli"] + args, capture_output=True, text=True, timeout=300
-            )
-            if proc.returncode != 0:
-                last_err = (proc.stderr or proc.stdout)[:200]
-                time.sleep(1)
-                continue
-            return json.loads(proc.stdout)
-        except (json.JSONDecodeError, subprocess.TimeoutExpired) as exc:
-            last_err = str(exc)[:200]
-            time.sleep(1)
-    raise RuntimeError(f"lark-cli 调用失败：{last_err}")
 
 
 def parse_time(value):
@@ -81,42 +65,14 @@ def parse_time(value):
     return None
 
 
-def text_of(message):
-    """把消息正文拉成纯文本，用于兜底判断，不参与分档。"""
-    content = message.get("content")
-    if isinstance(content, dict):
-        return json.dumps(content, ensure_ascii=False)
-    return str(content or "")
-
-
-def is_me(sender, me_name, me_id):
-    if not sender:
+def is_me(person, me_name, me_id):
+    if not person:
         return False
-    if me_id and sender.get("id") == me_id:
+    if me_id and person.get("id") == me_id:
         return True
-    if me_name and sender.get("name") == me_name:
+    if me_name and person.get("name") == me_name:
         return True
     return False
-
-
-def fetch_messages(chat_id):
-    args = [
-        "im", "+chat-messages-list",
-        "--chat-id", chat_id,
-        "--page-size", str(CONFIG["page_size"]),
-        "--page-all",
-        "--page-limit", str(CONFIG["fetch_pages"]),
-        "--order", "desc",
-        "--no-reactions",
-        "--format", "json",
-    ]
-    payload = run_cli(args)
-    data = payload.get("data", payload)
-    for key in ("messages", "data", "items"):
-        value = data.get(key) if isinstance(data, dict) else None
-        if isinstance(value, list):
-            return value
-    return []
 
 
 def classify(stats):
@@ -153,11 +109,11 @@ def classify(stats):
     return "quit", "你从没在这群发过言，群也基本不动"
 
 
-def analyze_one(chat, me_name, me_id, now):
+def analyze_one(adapter, chat, me_name, me_id, now):
     chat_id = chat["chat_id"]
     try:
-        messages = fetch_messages(chat_id)
-    except RuntimeError as exc:
+        messages = adapter.fetch_messages(chat_id)
+    except (RuntimeError, NotImplementedError) as exc:
         return {
             "chat_id": chat_id,
             "name": chat.get("name"),
@@ -170,7 +126,6 @@ def analyze_one(chat, me_name, me_id, now):
             "group_msgs": None,
         }
 
-    window_start = now - timedelta(days=CONFIG["window_days"])
     at_cut = now - timedelta(days=CONFIG["respond_at_within_days"])
 
     my_msgs = 0
@@ -235,9 +190,10 @@ def analyze_one(chat, me_name, me_id, now):
 
 def main():
     parser = argparse.ArgumentParser(description="逐群统计参与度并分档")
+    parser.add_argument("--source", default="lark", help="平台：lark / wecom")
     parser.add_argument("--input", default="data/chats_raw.json", help="collect.py 的输出")
     parser.add_argument("--out", default="data/chats_analyzed.json", help="输出文件路径")
-    parser.add_argument("--me", help="你在飞书里的显示名")
+    parser.add_argument("--me", help="你的显示名")
     parser.add_argument("--me-id", help="你的 open_id（ou_xxx），比显示名更准")
     parser.add_argument("--limit", type=int, help="只分析前 N 个群，用来先试跑")
     parser.add_argument("--sleep", type=float, default=0.2, help="每次请求之间的间隔秒数")
@@ -251,6 +207,15 @@ def main():
         sys.exit(f"找不到 {src}，先跑 collect.py。")
     payload = json.loads(src.read_text(encoding="utf-8"))
     chats = payload.get("chats", payload if isinstance(payload, list) else [])
+    source = args.source or payload.get("source", "lark")
+
+    adapter = get_adapter(source)
+    if not adapter.can_read_messages:
+        sys.exit(
+            f"{source} 适配器读不到群历史消息，无法统计发言和被 @ 次数。\n"
+            + (adapter.auth_hint or "")
+        )
+
     if args.limit:
         chats = chats[: args.limit]
 
@@ -258,7 +223,7 @@ def main():
     results = []
     for index, chat in enumerate(chats, 1):
         print(f"[{index}/{len(chats)}] {chat.get('name')}", flush=True)
-        results.append(analyze_one(chat, args.me, args.me_id, now))
+        results.append(analyze_one(adapter, chat, args.me, args.me_id, now))
         time.sleep(args.sleep)
 
     out = Path(args.out)
@@ -266,6 +231,7 @@ def main():
     out.write_text(
         json.dumps(
             {
+                "source": source,
                 "generated_at": now.strftime("%Y-%m-%d %H:%M:%S"),
                 "config": CONFIG,
                 "count": len(results),

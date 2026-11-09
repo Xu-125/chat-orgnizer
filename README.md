@@ -14,6 +14,19 @@
 
 所以这里只用你自己产生的数据做判断：**你在这个群发过多少条、最后一次说话是什么时候、最近被 @ 了几次、群本身还活不活**。同样的群名、同样的团队，落到哪个档位由你的行为决定，不由群的名字决定。
 
+## 现在支持哪些平台
+
+| 平台 | 群列表 | 群历史消息 | 完整分档 | 说明 |
+|---|---|---|---|---|
+| 飞书 | ✅ | ✅ | ✅ | 走 `lark-cli`，开箱可用 |
+| 企业微信 | ⚠️ | ❌ | ❌ | `wecom-cli` 只能列会话（名称 + 最后消息时间），读不到消息内容 |
+| 钉钉 | ❌ | ❌ | ❌ | 本机无钉钉客户端；要接需开放平台申请群会话权限 |
+| 个人微信 | ❌ | ❌ | ❌ | 无官方 API，不做 |
+
+**只有群列表、没有消息，就只能盘点"我在多少个群"，算不出"我在这个群投入多少"。** 所以企业微信目前只到列群这一层；`analyze.py` 在检测到平台不支持读消息时会直接拦住，不会产出一份全是「可退出」的假结果。
+
+接入方式和各平台的权限门槛见 [docs/adapters.md](docs/adapters.md)。
+
 ## 五个档位
 
 | 档位 | 判定依据 | 你要做什么 |
@@ -34,8 +47,8 @@
 # 确认能拉到群列表
 lark-cli im +chat-list --as user --page-size 1 --format json
 
-# 1. 拉群列表
-python scripts/collect.py --out data/chats_raw.json
+# 1. 拉群列表（--source 默认 lark；企业微信写 --source wecom，只能列群）
+python scripts/collect.py --source lark --out data/chats_raw.json
 
 # 2. 逐群统计参与度并分档
 #    --me 填你在飞书里的显示名；知道 open_id 的话用 --me-id 更准
@@ -52,6 +65,24 @@ python scripts/report.py --input data/chats_analyzed.json --out report.md
 - `report.md`：五档总览 + 每个群的分组清单 + 每群的判定依据（为什么它在这档）
 - `data/chats_analyzed.json`：结构化结果，字段足够直接写进多维表格做看板
 - 侧边栏分组的建议名单：按五档归好的 `chat_id`，拿去建飞书侧边栏分组
+
+## 仓库结构
+
+```
+scripts/
+  collect.py          拉群列表（--source 选平台）
+  analyze.py          逐群统计，按 CONFIG 里的阈值分档
+  report.py           生成 Markdown 清单
+  adapters/
+    base.py           适配器协议 + 统一数据结构 + CLI 调用工具
+    lark.py           飞书：群列表 + 消息（完整）
+    wecom.py          企业微信：仅会话列表
+docs/
+  method.md           判定口径、四类误判、接口边界
+  adapters.md         各平台支持情况与接入方式
+examples/             8 个虚构群，演示输出长什么样
+SKILL.md              给 agent 用的执行说明
+```
 
 ## 一件做不到的事，先说清
 

@@ -38,6 +38,16 @@ python scripts/report.py --input data/chats_analyzed.json --out report.md
 
 跑完把 `report.md` 交给用户，重点给「我在推进」「需我响应」两档；「可退出」单独列成候选清单，强调要用户自己确认后退群。
 
+## 平台支持
+
+| 平台 | 完整分档 | 说明 |
+|---|---|---|
+| 飞书 | ✅ | `--source lark`，默认 |
+| 企业微信 | ❌ | `--source wecom` 只能列会话，读不到消息，分析会被拦住 |
+| 钉钉 / 个人微信 | ❌ | 无 CLI / 无官方 API |
+
+用户问"能不能用在微信、钉钉"时，如实说明瓶颈是**读不到群历史消息**，不是脚本写不写得出来。详见 [docs/adapters.md](docs/adapters.md)。
+
 ## 判定口径（脚本已实现，改口径改 CONFIG）
 
 | 档位 | 条件 |
