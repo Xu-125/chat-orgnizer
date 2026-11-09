@@ -42,3 +42,33 @@
 4. 在 `collect.py` / `analyze.py` 顶部的 import 里加一行
 
 如果平台只能列群不能读消息，`can_read_messages = False`，`analyze.py` 会主动拦住并说明原因，不会产出一份全是「可退出」的假结果。
+
+---
+
+## English notes
+
+### Required data and current support
+
+Full classification needs both a **group list** and **message history with sender and mention information**. A list alone tells you how many groups exist, not how much you participate.
+
+- **Lark / Feishu:** the adapter uses authenticated user access through `lark-cli` for group lists and message history.
+- **WeCom:** the current CLI exposes `message aibot sessions list`, with `chat_id`, `chat_name`, `chat_type`, and `last_msg_time`. It lists sessions recently used by the bot, not their full message history. Full classification is unavailable.
+- **DingTalk:** no ready-to-use CLI adapter is included. Integration requires an enterprise application and authorized group-list/message access through the platform's supported interfaces.
+- **Personal WeChat:** unsupported. The project does not use unofficial protocols or simulated clicks.
+
+### Extending WeCom
+
+Authorized enterprise conversation archiving is a possible source of messages. It requires administrator setup and member authorization and covers messages after activation; it is not a switch an individual user can enable alone.
+
+If authorized archive data is available, implement `fetch_messages()` in `scripts/adapters/wecom.py` and map each message to the normalized Python structure shown above: `create_time`, `sender`, `mentions`, and `deleted`. The analyzer and report generator can then use that structure without changes.
+
+### Adding another platform
+
+1. Add `xxx.py` under `scripts/adapters/`.
+2. Implement a class inheriting from `Adapter`, decorate it with `@register`, and set `name`, `can_read_messages`, and `auth_hint`.
+3. Implement `list_chats()` and, where authorized message reading is supported, `fetch_messages()`.
+4. Import the adapter in `collect.py` and `analyze.py`.
+
+For DingTalk, this means adding `scripts/adapters/dingtalk.py` with the same normalized return structure and appropriate platform authorization.
+
+If a platform can list groups but not read messages, keep `can_read_messages = False`. `analyze.py` will stop with an explanation rather than generate a misleading “Can leave” classification for every group.

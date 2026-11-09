@@ -1,6 +1,6 @@
 ---
 name: chat-orgnizer
-description: 用飞书 CLI 按「用户自己的参与度」给群聊分五档（我在推进/需我响应/我在关注/无需处理/可退出），产出一份分组清单。当用户说群太多看不清、被拉进群不知道要干嘛、想把不用的群归置起来、想给群聊分类或盘点自己加入的群时使用。
+description: 用飞书 CLI 按「用户自己的参与度」给群聊分五档（我在推进/需我响应/我在关注/无需处理/可退出），产出一份分组清单。当用户说群太多看不清、被拉进群不知道要干嘛、想把不用的群归置起来、想给群聊分类或盘点自己加入的群时使用。 Use this skill to inventory and organize Lark group chats into five participation-based tiers when the user has too many groups, is unsure what needs attention, or wants to review unused groups.
 ---
 
 # chat-orgnizer
@@ -79,3 +79,51 @@ python scripts/report.py --input data/chats_analyzed.json --out report.md
 ## 隐私
 
 不要把真实的 `data/` 或 `report.md` 提交到公开仓库。`.gitignore` 已排除 `data/` 和 `report.md`。
+
+---
+
+## English instructions
+
+The English notes describe the same workflow; they do not change the scripts, thresholds, or authorization requirements.
+
+### Purpose and triggers
+
+Classify Lark groups by the user's own behavior rather than group names or types. Use this when the user has too many groups, does not know what is expected of them, wants to review finished project groups, or needs an inventory of which groups still require attention. Do not use it merely to summarize recent messages in one group.
+
+### Prerequisite and workflow
+
+Run the access check shown above. A response containing `chat_id` confirms access. If it fails, resolve authentication before continuing.
+
+Use the three commands in the Chinese workflow. Supply the actual display name with `--me`, or use `--me-id` for more reliable matching. Use `--page-limit 1` for a small collection trial and `--limit 10` for a small analysis trial.
+
+1. `collect.py`: collect the group list.
+2. `analyze.py`: fetch messages, compute participation, and classify each group.
+3. `report.py`: generate the Markdown list.
+
+Deliver `report.md`. Highlight **Actively contributing** and **Needs my response**. Present **Can leave** separately as candidates for the user's review, never as authorization to leave groups automatically.
+
+### Platforms and exact rules
+
+Lark (`--source lark`, default) supports full classification. The current WeCom adapter (`--source wecom`) supports session inventory only; analysis is blocked because it cannot read messages. DingTalk and personal WeChat have no supported full adapter. Explain that message-history access is the constraint. See [adapter notes](docs/adapters.md#english-notes).
+
+Apply the first matching rule, in this order:
+
+1. **我在推进 / Actively contributing:** at least 3 user messages and the latest user message within 14 days.
+2. **需我响应 / Needs my response:** at least 1 mention of the user within 7 days and group activity within 14 days.
+3. **我在关注 / Following:** group activity within 30 days, or an inactive group where the user spoke within 60 days.
+4. **无需处理 / No action needed:** the user has participated and the group has activity within 90 days.
+5. **可退出 / Can leave, after review:** silence beyond 90 days, no participation in an inactive group, or no readable messages.
+
+Read [the method notes](docs/method.md#english-notes) for caveats. Change `CONFIG` only when deliberately changing thresholds.
+
+### Delivery caveats and troubleshooting
+
+Explain that client-side archiving and bulk departure are not automated by this workflow. Classification is an inference about observed behavior, not a judgment of business importance. Ask the user to review the results.
+
+- Non-JSON message response: the script retries once; persistent failure is marked `unknown`.
+- Unrecognized user messages: display-name changes or duplicates may be responsible; prefer `--me-id`.
+- Invalid page size: keep message requests at or below 50.
+- Slow analysis: each group needs a request; `--sleep 0` reduces delay but may encounter rate limits.
+- No readable messages: new or announcement-only groups can be placed in **Can leave** and must be reviewed manually.
+
+Never commit real `data/` or `report.md` to a public repository. Both are excluded by `.gitignore`.

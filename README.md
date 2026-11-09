@@ -1,5 +1,9 @@
 # 群聊整理器 · chat-orgnizer
 
+**English: Chat Organizer** — Sort Lark group chats by your actual participation, not by their names.
+
+[中文说明](#为什么按你的行为分不按群的性质分) · [English guide](#english-guide)
+
 把飞书里被拉进去的一大堆群，按「你实际投入了多少」分成五档，然后落成一份可用的清单。
 
 解决三件具体的事：
@@ -97,3 +101,91 @@ SKILL.md              给 agent 用的执行说明
 ## License
 
 MIT
+
+---
+
+## English guide
+
+### What it helps with
+
+Turn the many Lark groups you have been added to into a usable, five-tier list based on **your actual involvement**. It addresses three everyday problems:
+
+- You are added to a group without knowing what you are expected to do.
+- Finished project groups sit idle in your chat list.
+- There are too many groups to review one by one.
+
+### Why participation, not group type?
+
+Labels such as “project,” “announcement,” or “team” may look tidy, but they do not tell you what needs your attention. You may never speak in an “important project” group while being mentioned daily in an “announcements” group.
+
+The organizer uses your message count, your most recent message, recent mentions of you, and the group's latest activity. Group names do not determine the tier.
+
+### Platform support
+
+- **Lark / Feishu:** group lists and message history through `lark-cli`; full classification is supported.
+- **WeCom:** the current `wecom-cli` adapter can list sessions and their latest message times, but cannot read message content. Inventory only; analysis is blocked.
+- **DingTalk:** no ready-to-use adapter in this repository. Integration requires an enterprise application and appropriate group-data permissions.
+- **Personal WeChat:** not supported; this project does not use unofficial protocols or simulated clicks.
+
+A group list alone cannot establish your involvement. The analyzer refuses unsupported message sources rather than returning a misleading list of “can leave” groups. See [platform adapters](docs/adapters.md#english-notes).
+
+### The five tiers
+
+- **我在推进 — Actively contributing:** you have spoken recently and contributed enough messages to indicate active involvement. Check daily and respond the same day when needed.
+- **需我响应 — Needs my response:** you were mentioned recently and the group is still active. Respond promptly.
+- **我在关注 — Following:** the group still has activity, but you mostly read rather than speak. Review when convenient; a reply is not automatically required.
+- **无需处理 — No action needed:** little current involvement, but keeping the group may preserve a useful access point. Leave it available without routine attention.
+- **可退出 — Can leave, after review:** an inactive or unused group worth considering for departure. Review it yourself before leaving.
+
+These are behavioral suggestions, not business-importance judgments. Exact rules and known misclassifications are documented in [the method guide](docs/method.md#english-notes). Tune thresholds in `CONFIG` at the top of `scripts/analyze.py`.
+
+### Run it
+
+Prerequisite: install `lark-cli` and authenticate as a **user**, not a bot.
+
+```bash
+# Check access to the group list
+lark-cli im +chat-list --as user --page-size 1 --format json
+
+# 1. Collect groups (default source: lark; wecom supports inventory only)
+python scripts/collect.py --source lark --out data/chats_raw.json
+
+# 2. Analyze participation; replace the name with your actual Lark display name
+# Use --me-id instead if you know your open_id; it is more reliable
+python scripts/analyze.py --input data/chats_raw.json --me "Your Lark display name" --out data/chats_analyzed.json
+
+# 3. Generate the report
+python scripts/report.py --input data/chats_analyzed.json --out report.md
+```
+
+The existing guide estimates about 10–20 minutes for 200 groups, mostly spent fetching messages. Actual time depends on the environment and API responses. Add `--limit 10` to the analysis command for a small trial.
+
+### Outputs and repository layout
+
+- `report.md`: tier overview, grouped chat list, and the reason for each classification.
+- `data/chats_analyzed.json`: structured results suitable for downstream dashboards.
+- Grouped `chat_id` values: suggested input for organizing your Lark sidebar.
+
+```text
+scripts/
+  collect.py          Collect group lists; select a platform with --source
+  analyze.py          Analyze each group and apply CONFIG thresholds
+  report.py           Generate a Markdown report
+  adapters/
+    base.py           Adapter protocol, normalized data, and CLI helpers
+    lark.py           Lark group lists and message history
+    wecom.py          WeCom session inventory only
+docs/
+  method.md           Classification rules, failure cases, and API boundaries
+  adapters.md         Platform support and integration notes
+examples/             Eight fictional groups showing the output format
+SKILL.md              Execution instructions for an agent
+```
+
+### Limits and privacy
+
+The current workflow does not automate Lark client-side archiving or bulk departure. It identifies and labels candidates; you make the final decision and perform the client action. No script should promise automatic archiving or leaving.
+
+This repository contains no real group names, IDs, member details, or personal participation statistics. All examples are fictional. Local `data/` is excluded by `.gitignore`; do not publish your generated data or reports.
+
+**License:** MIT.

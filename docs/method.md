@@ -87,3 +87,52 @@
 - **每周**只看「我在推进」「需我响应」两档，其余不看。
 - **每季度**清一次「可退出」，集中退一批。
 - 有新群进来随时跑单群分析，不用等周期。
+
+---
+
+## English notes
+
+### Problem and data
+
+Being added to many groups creates an onboarding cost—working out why you are there—and a continuing attention cost when finished groups remain in the list. The starting point is understanding what each group means to you, which cannot be inferred from its name alone.
+
+The method uses group lists to obtain `chat_id` values and message history to observe participation. The commands are shown in the Chinese section above. Key message fields are:
+
+- `sender`: user ID and display name.
+- `create_time`: a date-time string or millisecond timestamp; both are supported.
+- `mentions`: IDs or names of mentioned users.
+- `deleted`: withdrawn messages are excluded.
+
+For each group, compute:
+
+- `my_msgs`: messages matching your sender ID or display name.
+- `my_last`: the latest timestamp among your messages.
+- `at_me`: mentions matching you; `at_me_7d` counts only the last 7 days.
+- `group_last`: the latest timestamp across readable messages.
+
+The default window is 30 days, capped at 100 messages per group. Counts represent the fetched window, not necessarily the entire lifetime of the group. Behavioral evidence is preferred to names and descriptions that may be outdated.
+
+### Classification priority
+
+Apply the first matching tier:
+
+1. **Actively contributing (我在推进):** `my_msgs >= 3` and your latest message within 14 days.
+2. **Needs my response (需我响应):** at least one mention within 7 days and group activity within 14 days.
+3. **Following (我在关注):** activity within 30 days, or a group that has cooled down but where you spoke within 60 days.
+4. **No action needed (无需处理):** you have participated and the group still has occasional activity within 90 days.
+5. **Can leave, after review (可退出):** silence beyond 90 days, no participation in an inactive group, or no readable messages.
+
+A group can match several conditions. The first match takes precedence; an actively contributing group does not need a separate response-needed classification.
+
+### Known misclassifications
+
+1. **An important-sounding group does not need you:** ongoing group traffic can place it in **Following** even if you have not spoken for months. Only recent `at_me_7d` mentions count as response signals; old mentions are not current tasks.
+2. **A finished project still has occasional messages:** a recent `group_last` can keep it in **Following**. Review your last contribution and the actual project status before deciding to leave.
+3. **No readable messages:** new or announcement-only groups may be classified as **Can leave**, including service desks or on-call access points you want to retain. Always treat this tier as a candidate list.
+4. **Changed or duplicate display names:** matching `sender.name` may miss your messages. Prefer `--me-id` when your ID is known.
+
+### Limits and maintenance
+
+The current workflow does not automate client-side archiving or bulk departure. It identifies candidates and provides a list; the user performs the final client action. It also cannot infer business importance from behavior alone, so occasional manual review of **Following** is useful.
+
+Suggested cadence: run a full inventory monthly; focus weekly on **Actively contributing** and **Needs my response**; review departure candidates quarterly; analyze new groups when needed. Classification changes as activity changes.

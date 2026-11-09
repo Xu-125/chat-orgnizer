@@ -57,3 +57,38 @@
 2. 「可退出」那一档整理成一张退货清单，逐条确认后手动退群——飞书没有批量退群接口。
 3. 归档同理：飞书群的归档是客户端操作，接口未开放。这套流程只负责识别和标记，最后一步要自己点。
 4. 一个月后再跑一次。群活跃度会漂移，一次分类顶不了一年。
+
+---
+
+## English sample report
+
+This is a **fictional format demonstration**, not a live report. Names, dates, and relative ages reproduce the sample and should not be interpreted as current records.
+
+Eight groups; sample generated at 2026-11-09 10:39.
+
+### Overview
+
+- **Actively contributing / 我在推进:** 1 group (12%); check daily and respond the same day when needed.
+- **Needs my response / 需我响应:** 1 group (12%); respond promptly.
+- **Following / 我在关注:** 2 groups (25%); review when convenient, without assuming a reply is required.
+- **No action needed / 无需处理:** 1 group (12%); keep it as a useful access point.
+- **Can leave, after review / 可退出:** 2 groups (25%); confirm before leaving.
+- **Read failed / 读取失败:** 1 group (12%); check manually.
+
+### Group details
+
+- **Product launch preparation / 产品发布会筹备组 — Actively contributing:** 41 of 96 messages were yours; you spoke 1 day before the sample's analysis reference. Last group activity: 2026-10-31.
+- **Supplier coordination / XX 供应商对接 — Needs my response:** 1 mention in the last 7 days; group activity 2 days before the sample's reference. Last activity: 2026-10-30.
+- **Design review sync / 设计评审同步 — Following:** group activity 3 days before the sample's reference; no messages from you in the observed window. Last activity: 2026-10-29.
+- **Industry observations / 行业观察分享群 — Following:** group activity 50 days before the sample's reference; no messages from you in the observed window. Last activity: 2026-09-12.
+- **On-call access point / 值班 on call 一号 — No action needed:** no group activity for 73 days; your last message was 75 days before the sample's reference. Last activity: 2026-08-20.
+- **June conference operations / 6 月大会执行群 — Can leave:** silent for 124 days in the sample. Last activity: 2026-06-30.
+- **Temporary support / 某临时支援群 — Can leave:** no messages from you and little group activity. Last activity: 2026-05-14.
+- **Company notification bot / 公司通知机器人 — Read failed:** the message endpoint returned non-JSON even after retrying; no activity record is available.
+
+### Next steps
+
+1. Use the first two tiers as the priority groups in your Lark sidebar.
+2. Review departure candidates individually, then leave manually if appropriate; the workflow does not bulk-leave groups.
+3. Archiving also requires a client-side action. This workflow identifies and labels candidates, not the final action.
+4. Run again after a month because participation changes over time.
