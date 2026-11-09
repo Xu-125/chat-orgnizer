@@ -1,9 +1,9 @@
 ---
-name: lark-chat-organizer
+name: chat-orgnizer
 description: 用飞书 CLI 按「用户自己的参与度」给群聊分五档（我在推进/需我响应/我在关注/无需处理/可退出），产出一份分组清单。当用户说群太多看不清、被拉进群不知道要干嘛、想把不用的群归置起来、想给群聊分类或盘点自己加入的群时使用。
 ---
 
-# lark-chat-organizer
+# chat-orgnizer
 
 把用户被动加入的一堆飞书群，按**用户自身的行为数据**分档，而不是按群的名字或性质分。
 
