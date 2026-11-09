@@ -1,0 +1,8 @@
+# 本地跑出来的真实数据不要进仓库
+data/
+report.md
+
+__pycache__/
+*.pyc
+.DS_Store
+.env
