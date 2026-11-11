@@ -38,6 +38,14 @@ python scripts/report.py --input data/chats_analyzed.json --out report.md
 
 跑完把 `report.md` 交给用户，重点给「我在推进」「需我响应」两档；「可退出」单独列成候选清单，强调要用户自己确认后退群。
 
+## 项目维度（除了参与度五档）
+
+如果用户问"按项目把群分一下"（例如正在推进的书、直播、纪录片），用 `scripts/projects.py`：
+
+- 准备一份项目配置（参考 `examples/projects.example.json`），每个项目给 `name`、`keywords`、`chats`（白名单）
+- `chats` 白名单专门兜住"群名根本看不出是哪个项目"的代号群（比如"小三"、"鲨丁鱼"）——不要指望关键词能命中它们
+- 输出在每个群上加 `projects: ["易中天项目", ...]`，可以和参与度档位叠加
+
 ## 平台支持
 
 | 平台 | 完整分档 | 说明 |

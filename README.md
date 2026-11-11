@@ -1,8 +1,16 @@
 # 群聊整理器 · chat-orgnizer
 
-**English: Chat Organizer** — Sort Lark group chats by your actual participation, not by their names.
+**English.** A small CLI that sorts your Feishu (Lark) group chats by *your own behavior in them*, not by what each chat is nominally "for". It reads the recent messages of every group you're in, counts how often **you** speak, how often **you** get @-mentioned, and how active the chat is overall, then buckets every group into one of five tiers:
 
-[中文说明](#为什么按你的行为分不按群的性质分) · [English guide](#english-guide)
+- **active** — you're driving it, check daily
+- **respond** — someone just @-mentioned you, reply soon
+- **watching** — relevant, but you're mostly lurking
+- **idle** — nothing needed from you
+- **quit** — project's over / chat's dead, you can leave
+
+It can also tag groups by **project** (a book launch, a live stream, a documentary shoot) so the same 200+ chats can be sliced as "what am I actually working on this week", on top of the engagement tiers. Runs entirely on your machine with the official Lark CLI — no server, no dashboard, no "open this app to see your groups".
+
+---
 
 把飞书里被拉进去的一大堆群，按「你实际投入了多少」分成五档，然后落成一份可用的清单。
 
@@ -76,6 +84,7 @@ python scripts/report.py --input data/chats_analyzed.json --out report.md
 scripts/
   collect.py          拉群列表（--source 选平台）
   analyze.py          逐群统计，按 CONFIG 里的阈值分档
+  projects.py         按项目给群打标签（配置见 examples/projects.example.json）
   report.py           生成 Markdown 清单
   adapters/
     base.py           适配器协议 + 统一数据结构 + CLI 调用工具
