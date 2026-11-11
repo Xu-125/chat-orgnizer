@@ -28,16 +28,18 @@ It can also tag groups by **project** (a book launch, a live stream, a documenta
 
 ## 现在支持哪些平台
 
-| 平台 | 群列表 | 群历史消息 | 完整分档 | 说明 |
-|---|---|---|---|---|
-| 飞书 | ✅ | ✅ | ✅ | 走 `lark-cli`，开箱可用 |
-| 企业微信 | ⚠️ | ❌ | ❌ | `wecom-cli` 只能列会话（名称 + 最后消息时间），读不到消息内容 |
-| 钉钉 | ❌ | ❌ | ❌ | 本机无钉钉客户端；要接需开放平台申请群会话权限 |
-| 个人微信 | ❌ | ❌ | ❌ | 无官方 API，不做 |
+表里分两层看：**接口层**是平台开放了什么能力（跟用谁的机器无关）；**本机要准备**是运行时探测的环境状态（CLI 装没装、登没登，换台机器装好就能用）。
+
+| 平台 | 接口层：群列表 | 接口层：历史消息 | 本机要准备 |
+|---|---|---|---|
+| 飞书 | ✅ | ✅ | 装好并以用户身份登录 `lark-cli` |
+| 企业微信 | ⚠️ 只能列会话 | ❌ 消息内容接口未开放 | 装好并授权 `wecom-cli`；即使授权也只能列群、读不到消息 |
+| 钉钉 | 仓库内未接 | 仓库内未接 | 需要先有企业内部应用和群会话读取权限，再补对应适配器 |
+| 个人微信 | ❌ 无官方 API | ❌ | 不接非官方协议或模拟点击 |
 
 **只有群列表、没有消息，就只能盘点"我在多少个群"，算不出"我在这个群投入多少"。** 所以企业微信目前只到列群这一层；`analyze.py` 在检测到平台不支持读消息时会直接拦住，不会产出一份全是「可退出」的假结果。
 
-接入方式和各平台的权限门槛见 [docs/adapters.md](docs/adapters.md)。
+CLI 是否安装、是否已授权，由脚本启动时探测：找不到命令会直接退出并给安装指引，不会当成平台不支持。接入方式和各平台的权限门槛见 [docs/adapters.md](docs/adapters.md)。
 
 ## 五个档位
 
@@ -131,10 +133,12 @@ The organizer uses your message count, your most recent message, recent mentions
 
 ### Platform support
 
-- **Lark / Feishu:** group lists and message history through `lark-cli`; full classification is supported.
-- **WeCom:** the current `wecom-cli` adapter can list sessions and their latest message times, but cannot read message content. Inventory only; analysis is blocked.
-- **DingTalk:** no ready-to-use adapter in this repository. Integration requires an enterprise application and appropriate group-data permissions.
-- **Personal WeChat:** not supported; this project does not use unofficial protocols or simulated clicks.
+- **Lark / Feishu:** group lists and message history through `lark-cli`; full classification works once the CLI is installed and you are signed in as a user.
+- **WeCom:** the adapter can list sessions and their latest message times, but cannot read message content. Inventory only; analysis is blocked.
+- **DingTalk:** no adapter is bundled yet. Integration requires an enterprise application and authorized group-list/message access; add an adapter following the same interface.
+- **Personal WeChat:** not supported; there is no official API.
+
+Whether a CLI is installed and signed in is a local-machine state checked at runtime, not a fixed claim about the platform. A missing command exits with an install hint rather than being treated as unsupported.
 
 A group list alone cannot establish your involvement. The analyzer refuses unsupported message sources rather than returning a misleading list of “can leave” groups. See [platform adapters](docs/adapters.md#english-notes).
 

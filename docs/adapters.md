@@ -2,14 +2,20 @@
 
 这套东西能不能用，取决于平台给不给两样数据：**群列表**和**群历史消息（含发送者与 @）**。后者是关键——只拿到群列表，最多能盘点"我在多少个群"，算不出"我在这个群投入多少"。
 
+看支持情况要分两层：**接口层**是平台开放了什么能力，跟用谁的机器无关；**本机层**是命令行工具装没装、登没登，这是运行时探测的环境状态——换台机器装好、授权好就能用，不写死在结论里。
+
 ## 现状
 
-| 平台 | 群列表 | 历史消息 | 能否完整分档 | 说明 |
+| 平台 | 接口层：群列表 | 接口层：历史消息 | 能否完整分档 | 说明 |
 |---|---|---|---|---|
 | 飞书 | ✅ | ✅ | ✅ | 走 `lark-cli`，用户态 token 直接读 |
 | 企业微信 | ⚠️ | ❌ | ❌ | `wecom-cli` 只有 `message aibot sessions list`，能列会话名称和最后消息时间，没有读消息内容的接口 |
-| 钉钉 | ❌ | ❌ | ❌ | 本机没有钉钉命令行；要接需企业内部应用 + 群会话读取权限，得走开放平台申请 |
+| 钉钉 | 仓库内未接 | 仓库内未接 | — | 需先有企业内部应用和群会话读取权限，再补适配器；不取决于本机是否装了钉钉客户端 |
 | 个人微信 | ❌ | ❌ | ❌ | 无官方 API，只能靠第三方协议或模拟点击，违反用户协议且有封号风险，不做 |
+
+## 本机环境探测
+
+脚本启动时用 `ensure_cli()` 检查对应 CLI 是否在本机 PATH 里：找不到命令就退出并给出安装指引，不会把"没装 CLI"误判成"平台不支持"。已登录/授权状态再通过一次轻量接口调用确认。
 
 ## 企业微信为什么只能做一半
 
@@ -32,7 +38,7 @@
 
 ## 钉钉怎么接
 
-钉钉走开放平台企业内部应用，需要 `chat` 相关权限（群列表、群消息读取）。目前没有现成 CLI，得自己调 HTTP 接口。接法是同一套：新建 `adapters/dingtalk.py`，实现 `list_chats()` 和 `fetch_messages()`，返回上面那个统一结构。
+钉钉走开放平台企业内部应用，需要 `chat` 相关权限（群列表、群消息读取）。本仓库未提供钉钉适配器，接法是同一套：新建 `adapters/dingtalk.py`，实现 `list_chats()` 和 `fetch_messages()`，返回上面那个统一结构。
 
 ## 加一个新平台
 
@@ -55,6 +61,8 @@ Full classification needs both a **group list** and **message history with sende
 - **WeCom:** the current CLI exposes `message aibot sessions list`, with `chat_id`, `chat_name`, `chat_type`, and `last_msg_time`. It lists sessions recently used by the bot, not their full message history. Full classification is unavailable.
 - **DingTalk:** no ready-to-use CLI adapter is included. Integration requires an enterprise application and authorized group-list/message access through the platform's supported interfaces.
 - **Personal WeChat:** unsupported. The project does not use unofficial protocols or simulated clicks.
+
+CLI availability and sign-in status are detected at runtime, not recorded as a fixed platform verdict: if the command is missing locally, the script exits with an install hint instead of assuming the platform is unsupported.
 
 ### Extending WeCom
 

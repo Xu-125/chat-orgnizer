@@ -52,9 +52,9 @@ python scripts/report.py --input data/chats_analyzed.json --out report.md
 |---|---|---|
 | 飞书 | ✅ | `--source lark`，默认 |
 | 企业微信 | ❌ | `--source wecom` 只能列会话，读不到消息，分析会被拦住 |
-| 钉钉 / 个人微信 | ❌ | 无 CLI / 无官方 API |
+| 钉钉 / 个人微信 | ❌ | 仓库内未接；钉钉需企业内部应用 + 群会话权限，个人微信无官方 API |
 
-用户问"能不能用在微信、钉钉"时，如实说明瓶颈是**读不到群历史消息**，不是脚本写不写得出来。详见 [docs/adapters.md](docs/adapters.md)。
+CLI 装没装、登没登是**当前本机**的状态，脚本启动时探测：找不到命令就退出并给安装指引，不要把"本机没装"说成"平台不支持"。用户问"能不能用在微信、钉钉"时，如实说明瓶颈是**读不到群历史消息**，不是脚本写不写得出来。详见 [docs/adapters.md](docs/adapters.md)。
 
 ## 判定口径（脚本已实现，改口径改 CONFIG）
 

@@ -20,7 +20,7 @@ from pathlib import Path
 
 import adapters.lark      # noqa: F401  导入即注册
 import adapters.wecom     # noqa: F401
-from adapters.base import get_adapter
+from adapters.base import ensure_cli, get_adapter
 
 # ---------------------------------------------------------------- 判定阈值
 # 想改口径就改这里，别去动下面的逻辑。
@@ -210,6 +210,7 @@ def main():
     source = args.source or payload.get("source", "lark")
 
     adapter = get_adapter(source)
+    ensure_cli(adapter)
     if not adapter.can_read_messages:
         sys.exit(
             f"{source} 适配器读不到群历史消息，无法统计发言和被 @ 次数。\n"

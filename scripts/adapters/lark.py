@@ -7,7 +7,9 @@ from adapters.base import Adapter, pick_list, register, run_cli
 class LarkAdapter(Adapter):
     name = "lark"
     can_read_messages = True
-    auth_hint = "先运行 lark-cli im +chat-list --as user --page-size 1 --format json 确认登录态。"
+    cli = "lark-cli"
+    install_hint = "安装飞书官方 lark-cli 命令行，并把它放到 PATH。"
+    auth_hint = "先运行 lark-cli im +chat-list --as user --page-size 1 --format json 确认用户态登录有效。"
 
     def __init__(self, page_size=100, page_limit=100, exclude_muted=False,
                  msg_page_size=50, msg_pages=2):

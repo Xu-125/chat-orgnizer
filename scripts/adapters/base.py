@@ -13,6 +13,7 @@
 """
 
 import json
+import shutil
 import subprocess
 import sys
 import time
@@ -26,6 +27,10 @@ class Adapter:
     can_read_messages = False
     #: 该平台是否需要额外授权，写进报错信息给用户看。
     auth_hint = ""
+    #: 本机需要的 CLI 可执行名；None 表示该适配器不走命令行。
+    cli = None
+    #: CLI 没装时给出的安装/配置提示。
+    install_hint = ""
 
     def list_chats(self):
         raise NotImplementedError
@@ -34,6 +39,22 @@ class Adapter:
         raise NotImplementedError(
             f"{self.name} 适配器不支持读取群历史消息，无法统计参与度。"
             + (f"\n{self.auth_hint}" if self.auth_hint else "")
+        )
+
+
+def ensure_cli(adapter):
+    """运行时探测本机是否装了对应 CLI；缺了就退出并给安装指引。
+
+    注意：CLI 有没有装、有没有登录，是「当前这台机器」的状态，
+    不是平台能力本身。换到另一台机器上装好、授权好就能用。
+    """
+    if not adapter.cli:
+        return
+    if shutil.which(adapter.cli) is None:
+        raise SystemExit(
+            f"本机找不到 `{adapter.cli}`。\n"
+            + (f"{adapter.install_hint}\n" if adapter.install_hint else "")
+            + "装好后把它放到 PATH，再重新跑本脚本。"
         )
 
 

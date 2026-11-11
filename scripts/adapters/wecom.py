@@ -17,6 +17,8 @@ from adapters.base import Adapter, pick_list, register, run_cli
 class WecomAdapter(Adapter):
     name = "wecom"
     can_read_messages = False
+    cli = "wecom-cli"
+    install_hint = "安装企业微信 wecom-cli 后，运行 wecom-cli auth init 扫码完成授权。"
     auth_hint = (
         "企业微信需要先授权：wecom-cli auth init --noninteractive，扫码完成后再跑。\n"
         "即使授权成功，wecom-cli 也只能列出会话，无法读取群历史消息，\n"

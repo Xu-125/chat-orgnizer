@@ -15,7 +15,7 @@ from pathlib import Path
 
 import adapters.lark      # noqa: F401  导入即注册
 import adapters.wecom     # noqa: F401
-from adapters.base import get_adapter
+from adapters.base import ensure_cli, get_adapter
 
 
 def main():
@@ -40,6 +40,7 @@ def main():
     except TypeError:
         pass
 
+    ensure_cli(adapter)
     chats = adapter.list_chats()
 
     out = Path(args.out)
